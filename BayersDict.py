@@ -1,6 +1,8 @@
 import nltk
 import os
 import csv
+import operator
+import math
 from nltk.util import ngrams
 from nltk.stem.wordnet import WordNetLemmatizer as wnl
 
@@ -22,7 +24,7 @@ class BayerDict:
     def readfile(self, inputpath, cat, outputpath, mode):
         self.path = inputpath
         for filename in os.listdir(self.path):
-            # print(filename)
+            print(filename)
             # open each file
             filepath = self.path +filename
             with open(filepath,"r",encoding="utf8") as newf:
@@ -37,8 +39,13 @@ class BayerDict:
                     self.dic[words] = 1
             self.word_size += len(ngram_wordslist)
         # caculate p(n|c) for each word
+        maxd = max(self.dic.items(), key=operator.itemgetter(1))[1]
+        print(maxd)
+        maxp = math.log(10, maxd / (maxd + self.word_size))
+        # print(maxp)
         for key in self.dic:
-            self.dic[key] = (self.dic[key]+1)/(self.dic[key]+self.word_size)
+            self.dic[key] = math.log(10, (self.dic[key]+1)/(self.dic[key]+self.word_size)) / maxp
+            # self.dic[key] = (self.dic[key] + 1) / (self.dic[key] + self.word_size)
         # print(self.dic)
         # print(self.word_size)
         self.__output(outputpath, cat, mode)
