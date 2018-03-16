@@ -2,10 +2,11 @@ import nltk
 import os
 import csv
 from nltk.util import ngrams
+from nltk.stem.wordnet import WordNetLemmatizer as wnl
 
 
 class BayerDict:
-    # path: the folder path which contains training text
+    # path: the folder path which contains training csv files
     def __init__(self):
         self.path = None
         self.dic = {}   # dictionary for saving words
@@ -21,7 +22,7 @@ class BayerDict:
     def readfile(self, inputpath, cat, outputpath, mode):
         self.path = inputpath
         for filename in os.listdir(self.path):
-            print(filename)
+            # print(filename)
             # open each file
             filepath = self.path +filename
             with open(filepath,"r",encoding="utf8") as newf:
@@ -35,13 +36,16 @@ class BayerDict:
                 else:
                     self.dic[words] = 1
             self.word_size += len(ngram_wordslist)
+        # caculate p(n|c) for each word
         for key in self.dic:
             self.dic[key] = (self.dic[key]+1)/(self.dic[key]+self.word_size)
-        print(self.dic)
-        print(self.word_size)
+        # print(self.dic)
+        # print(self.word_size)
         self.__output(outputpath, cat, mode)
 
-    # group n grams words
+    # regroup words list to n-gram words list
+    # min: minimum n
+    # max: maximum n
     def __word_grams(self, words, min, max):
         s = []
         for n in range(min, max):
@@ -59,6 +63,7 @@ class BayerDict:
             for key, item in self.dic.items():
                 writer.writerow({'word': key, 'perc': item, 'category': cat})
 
+    # transfer a txt to n-gram words list
     # txtdata: a utf-8 text string
     def __ngramwords(self, txtdata):
         # temp words list
@@ -77,7 +82,11 @@ class BayerDict:
             for words in sent:
                 # print(words[0] + ":" + words[1])
                 if words[1][:2] in self.word_type_list_In and words[1] not in self.word_type_list_Ex:
-                    temp_wordlist.append(words[0])
+                    if words[1][:2] == "VB": # change verb to parent tense
+                        add_word = wnl().lemmatize(words[0], "v")
+                    else:
+                        add_word = words[0]
+                    temp_wordlist.append(add_word)
         # create n-gram words
         ngram_wordslist = self.__word_grams(temp_wordlist, 1, 3)
         return ngram_wordslist
