@@ -40,7 +40,7 @@ def createanlysis(pos_outpath,neg_outpath):
                        analysis_perc=0.01,slice=4,gap_threhold=0.4)
     result_list = Pool(4).map(params_x, slice_list)
     df_result = pd.DataFrame(data=None, columns=["word", "perc", "category", "type"])
-    for i in range(1,5):
+    for i in range(4):
         if result_list[i].empty:
             continue
         else:
