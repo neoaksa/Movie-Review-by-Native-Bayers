@@ -7,6 +7,7 @@ from nltk.util import ngrams
 from nltk.stem.wordnet import WordNetLemmatizer as wnl
 
 
+
 class BayerDict:
     # path: the folder path which contains training csv files
     def __init__(self):
@@ -15,6 +16,7 @@ class BayerDict:
         self.word_size = 0  # the total number of vocabulary
         self.word_type_list_In = ("NN", "VB", "JJ", "RB")   # included words type
         self.word_type_list_Ex = ("VBZ","VBP") # excluded words type
+        self.word_list_Ex = ("/", "br", "<", ">") # excluded words
 
     # read files into dictionary in folder
     # inputpath: input folder with single classfication
@@ -88,7 +90,8 @@ class BayerDict:
         for sent in tags:
             for words in sent:
                 # print(words[0] + ":" + words[1])
-                if words[1][:2] in self.word_type_list_In and words[1] not in self.word_type_list_Ex:
+                if words[1][:2] in self.word_type_list_In and words[1] not in self.word_type_list_Ex \
+                        and words[0] not in self.word_list_Ex:
                     if words[1][:2] == "VB": # change verb to parent tense
                         add_word = wnl().lemmatize(words[0], "v")
                     else:
@@ -97,3 +100,5 @@ class BayerDict:
         # create n-gram words
         ngram_wordslist = self.__word_grams(temp_wordlist, 1, 3)
         return ngram_wordslist
+
+
