@@ -3,6 +3,7 @@ import os
 import csv
 import operator
 import math
+from decimal import *
 from nltk.util import ngrams
 from nltk.stem.wordnet import WordNetLemmatizer as wnl
 
@@ -17,6 +18,8 @@ class BayerDict:
         self.word_type_list_In = ("NN", "VB", "JJ", "RB")   # included words type
         self.word_type_list_Ex = ("VBZ","VBP") # excluded words type
         self.word_list_Ex = ("/", "br", "<", ">") # excluded words
+        self.PCpos = Decimal(0.5)  # P(Cpos)
+        self.PCneg = Decimal(0.5)  # P(Cneg)
 
     # read files into dictionary in folder
     # inputpath: input folder with single classfication
@@ -26,7 +29,7 @@ class BayerDict:
     def readfile(self, inputpath, cat, outputpath, mode):
         self.path = inputpath
         for filename in os.listdir(self.path):
-            print(filename)
+            # print(filename)
             # open each file
             filepath = self.path +filename
             with open(filepath,"r",encoding="utf8") as newf:
@@ -42,7 +45,6 @@ class BayerDict:
             self.word_size += len(ngram_wordslist)
         # caculate p(n|c) for each word
         maxd = max(self.dic.items(), key=operator.itemgetter(1))[1]
-        print(maxd)
         maxp = math.log(10, maxd / (maxd + self.word_size))
         # print(maxp)
         for key in self.dic:
@@ -101,4 +103,54 @@ class BayerDict:
         ngram_wordslist = self.__word_grams(temp_wordlist, 1, 3)
         return ngram_wordslist
 
-
+    def validation(self,validationpath, posdicfile,negdicfile, catgory, maxfilenum, missingvalue):
+        right = 0
+        wrong = 0
+        filenum = 0
+        missingvalue = Decimal(missingvalue)
+        # read csv into two dictionaries
+        posdic = {}
+        negdic = {}
+        with open(posdicfile, "r", encoding="utf8") as newf:
+            reader = csv.DictReader(newf)
+            for row in reader:
+                posdic[row["word"]] = Decimal(row["perc"])
+        with open(negdicfile, "r", encoding="utf8") as newf:
+            reader = csv.DictReader(newf)
+            for row in reader:
+                negdic[row["word"]] = Decimal(row["perc"])
+        # loop file to classfication
+        for filename in os.listdir(validationpath):
+            print(filename)
+            if filenum >= maxfilenum:
+                break
+            filenum += 1
+            pos_word_pro = Decimal(1)
+            neg_word_pro = Decimal(1)
+            # open each file
+            filepath = validationpath + filename
+            with open(filepath, "r", encoding="utf8") as newf:
+                txtdata = newf.read()
+            # group to n-gram words
+            ngram_wordslist = self.__ngramwords(txtdata)
+            # search each word in two dictionary
+            for words in ngram_wordslist:
+                # pos P
+                if words in posdic:
+                    pos_word_pro *= posdic[words]
+                else:
+                    pos_word_pro *= missingvalue
+                # neg P
+                if words in negdic:
+                    neg_word_pro *= negdic[words]
+                else:
+                    neg_word_pro *= missingvalue
+            # pick up max one
+            if ((pos_word_pro * self.PCpos > neg_word_pro*self.PCneg) \
+                and catgory == "pos") \
+                or ((pos_word_pro * self.PCpos < neg_word_pro*self.PCneg) \
+                and catgory == "neg"):
+                right += 1
+            else:
+                wrong += 1
+        print(catgory+":"+ str(right/(right+wrong)))

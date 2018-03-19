@@ -4,6 +4,7 @@ from multiprocessing import Pool
 from functools import partial
 import pandas as pd
 
+
 def main():
     # windows
     # pos_inputpath = "D:\\minitest\\aclImdb\\train\\pos\\"   # training folder for positive
@@ -19,10 +20,12 @@ def main():
     # create dictionary
     # createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath)
     # analysis dictionary
-    createanlysis(pos_outpath,neg_outpath)
-    # neg_df = pd.read_csv(neg_outpath)
-    # neg_df = neg_df.sort_values(by=["perc"], ascending=False)
-    # print(neg_df[neg_df["word"] == "Pita"].empty)
+    # createanlysis(pos_outpath,neg_outpath)
+
+    # validation
+    test_pos_inputpath = "/home/jie/Documents/aclImdb/test/pos/"
+    test_neg_inputpath = "/home/jie/Documents/aclImdb/test/neg/"
+    # validation(test_pos_inputpath,test_neg_inputpath,pos_outpath,neg_outpath)
 
 # create dictionary
 def createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath):
@@ -31,8 +34,6 @@ def createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath):
     p_pos = Process(target=aBayerdict.readfile, args=(pos_inputpath, "P", pos_outpath, "w"))
     p_neg.start()
     p_pos.start()
-    # aBayerdict.readfile(neg_inputpath, "N",neg_outpath, "w") # negtive class
-    # aBayerdict.readfile(pos_inputpath, "P",pos_outpath,"w") # postive class
 
 def createanlysis(pos_outpath,neg_outpath):
     slice_list = [1,2,3,4]
@@ -44,17 +45,17 @@ def createanlysis(pos_outpath,neg_outpath):
         if result_list[i].empty:
             continue
         else:
-            df_result.append(result_list[i])
+            df_result.append(result_list[i], ignore_index=True)
     df_result.to_csv("/home/jie/Documents/aclImdb/new.csv")
 
-    # p_analysis1 = Process(target=analysis_dic, args=(pos_outpath,neg_outpath,analysis_perc, slice,1, gap_threhold))
-    # p_analysis2 = Process(target=analysis_dic, args=(pos_outpath, neg_outpath, analysis_perc,slice, 2, gap_threhold))
-    # p_analysis3 = Process(target=analysis_dic, args=(pos_outpath, neg_outpath, analysis_perc,slice, 3, gap_threhold))
-    # p_analysis4 = Process(target=analysis_dic, args=(pos_outpath, neg_outpath, analysis_perc,slice, 4, gap_threhold))
-    # p_analysis1.start()
-    # p_analysis2.start()
-    # p_analysis3.start()
-    # p_analysis4.start()
+def validation(test_pos_inputpath,test_neg_inputpath, pos_outpath,neg_outpath):
+    aBayerdict = BayerDict()
+    p_pos = Process(target=aBayerdict.validation, args=(test_pos_inputpath, \
+                                                        pos_outpath, neg_outpath, "pos", 500, 0.1))
+    p_neg = Process(target=aBayerdict.validation, args=(test_neg_inputpath, \
+                                                        pos_outpath, neg_outpath, "neg", 500, 0.1))
+    p_pos.start()
+    p_neg.start()
 
 # analysis two dictionary
 # analysis_perc: proportion of analysis words
@@ -95,13 +96,13 @@ def analysis_dic(sliceindex,posfile,negfile,analysis_perc, slice,gap_threhold):
                 df_result.loc[row_num_result] = [item["word"], item["perc"], "P","1"]
                 row_num_result += 1
                 row_num += 1
-                print(item["word"])
+                print(item["word"] + " type P1")
             # gap greater than threshold
             elif abs(neg_df[neg_df["word"] == item["word"]].iloc[0]["perc"] - item["perc"]) >= gap_threhold:
                 df_result.loc[row_num_result] = [item["word"],item["perc"],"P","2"]
                 row_num_result += 1
                 row_num += 1
-                print(item["word"])
+                print(item["word"] + " type P2")
 
     except:
         print(item)
@@ -120,13 +121,13 @@ def analysis_dic(sliceindex,posfile,negfile,analysis_perc, slice,gap_threhold):
                 df_result.loc[row_num_result] = [item["word"], item["perc"], "N","1"]
                 row_num_result += 1
                 row_num += 1
-                print(item["word"])
+                print(item["word"] + " type N1")
             # gap greater than threshold
             elif abs(pos_df[pos_df["word"] == item["word"]].iloc[0]["perc"] - item["perc"]) >= gap_threhold:
                 df_result.loc[row_num_result] = [item["word"], item["perc"], "N","2"]
                 row_num_result += 1
                 row_num += 1
-                print(item["word"])
+                print(item["word"] + " type N2")
 
     except:
         print(item)
