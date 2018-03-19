@@ -51,9 +51,9 @@ def createanlysis(pos_outpath,neg_outpath):
 def validation(test_pos_inputpath,test_neg_inputpath, pos_outpath,neg_outpath):
     aBayerdict = BayerDict()
     p_pos = Process(target=aBayerdict.validation, args=(test_pos_inputpath, \
-                                                        pos_outpath, neg_outpath, "pos", 150, 6.778643071565863e-07))
+                                                        pos_outpath, neg_outpath, "pos", 150))
     p_neg = Process(target=aBayerdict.validation, args=(test_neg_inputpath, \
-                                                        pos_outpath, neg_outpath, "neg", 150, 6.965745597735854e-07))
+                                                        pos_outpath, neg_outpath, "neg", 150))
     p_pos.start()
     p_neg.start()
 
