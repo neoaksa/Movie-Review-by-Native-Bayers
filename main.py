@@ -3,7 +3,7 @@ from multiprocessing import Process
 from multiprocessing import Pool
 from functools import partial
 import pandas as pd
-
+import decimal as D
 
 def main():
     # windows
@@ -19,6 +19,7 @@ def main():
 
     # create dictionary
     # createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath)
+
     # analysis dictionary
     # createanlysis(pos_outpath,neg_outpath)
 
@@ -36,9 +37,9 @@ def createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath):
     p_pos.start()
 
 def createanlysis(pos_outpath,neg_outpath):
-    slice_list = [1,2,3,4]
+    slice_list = [1,2,3,4] # four cores
     params_x = partial(analysis_dic, posfile=pos_outpath, negfile=neg_outpath,
-                       analysis_perc=0.01,slice=4,gap_threhold=0.1)
+                       analysis_perc=0.01,slice=4,gap_threhold=0.001)
     result_list = Pool(4).map(params_x, slice_list)
     df_result = pd.DataFrame(data=None, columns=["word", "perc", "category", "type"])
     for i in range(4):
@@ -50,12 +51,16 @@ def createanlysis(pos_outpath,neg_outpath):
 
 def validation(test_pos_inputpath,test_neg_inputpath, pos_outpath,neg_outpath):
     aBayerdict = BayerDict()
-    p_pos = Process(target=aBayerdict.validation, args=(test_pos_inputpath, \
-                                                        pos_outpath, neg_outpath, "pos", 150))
-    p_neg = Process(target=aBayerdict.validation, args=(test_neg_inputpath, \
-                                                        pos_outpath, neg_outpath, "neg", 150))
-    p_pos.start()
-    p_neg.start()
+    # test list
+    testlist = [50]
+    for i in testlist:
+        print("i = ", i)
+        p_pos = Process(target=aBayerdict.validation, args=(test_pos_inputpath, \
+                                                            pos_outpath, neg_outpath, "pos", i))
+        p_neg = Process(target=aBayerdict.validation, args=(test_neg_inputpath, \
+                                                            pos_outpath, neg_outpath, "neg", i))
+        p_pos.start()
+        p_neg.start()
 
 # analysis two dictionary
 # analysis_perc: proportion of analysis words
@@ -66,8 +71,8 @@ def analysis_dic(sliceindex,posfile,negfile,analysis_perc, slice,gap_threhold):
     # df for save result
     df_result = pd.DataFrame(data=None,columns=["word","perc","category","type"])
     # read csv from pos and neg files
-    pos_df = pd.read_csv(posfile)
-    neg_df = pd.read_csv(negfile)
+    pos_df = pd.read_csv(posfile,converters={"perc":D.Decimal})
+    neg_df = pd.read_csv(negfile,converters={"perc":D.Decimal})
     pos_df = pos_df.sort_values(by=["perc"],ascending=False)
     neg_df = neg_df.sort_values(by=["perc"], ascending=False)
     max_pos_row = int(len(pos_df.axes[0]) * analysis_perc)
@@ -127,13 +132,13 @@ def analysis_dic(sliceindex,posfile,negfile,analysis_perc, slice,gap_threhold):
                 df_result.loc[row_num_result] = [item["word"], item["perc"], "N","1"]
                 row_num_result += 1
                 row_num += 1
-                # print(item["word"] + " type N1")
+                print(item["word"] + " type N1")
             # gap greater than threshold
             elif item["perc"] - mapped_item.iloc[0]["perc"] >= gap_threhold:
                 df_result.loc[row_num_result] = [item["word"], item["perc"], "N","2"]
                 row_num_result += 1
                 row_num += 1
-                # print(item["word"] + " type N2")
+                print(item["word"] + " type N2")
 
     except:
         print(item)

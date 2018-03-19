@@ -1,6 +1,8 @@
-import nltk
+from nltk.stem.wordnet import WordNetLemmatizer as wnl
+from nltk.corpus import wordnet
 
-senlist = nltk.sent_tokenize("None is good", language="english")
-words = nltk.word_tokenize(senlist[0], language="english")
-print(words)
-print(nltk.pos_tag(senlist[0], lang='eng'))
+wnl = wnl()
+print(wnl.lemmatize( word="worse", pos=wordnet.ADJ))
+
+dic = {"a":1,"b":2,"c":3}
+print(len(dic))

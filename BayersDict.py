@@ -99,6 +99,10 @@ class BayerDict:
                         add_word = wnl().lemmatize(words[0], "v")
                     elif words[1][:2] == "NN": # change noun to morphy
                         add_word = wordnet.morphy(words[0])
+                    elif words[1][:3] in ("JJR","JJS"): # change adj to ordinal
+                        add_word = wnl().lemmatize(word=words[0], pos=wordnet.ADJ)
+                    elif words[1][:3] in ("RBR","RBS"): # change adv to ordinal
+                        add_word = wnl().lemmatize(word=words[0], pos=wordnet.ADV)
                     else:
                         add_word = words[0]
                     temp_wordlist.append(add_word)
@@ -111,7 +115,6 @@ class BayerDict:
     # negdicfile: negtive dictionary csv file
     # catgory: "neg" or "pos" for validation folder
     # maxfilemum: maximun number of validation
-    # missngvalue: giving value for the words which can not find in dictionary
     def validation(self,validationpath, posdicfile,negdicfile, catgory, maxfilenum):
         right = 0
         wrong = 0
@@ -119,14 +122,17 @@ class BayerDict:
         # read csv into two dictionaries
         posdic = {}
         negdic = {}
+        amplif_num = 1
         with open(posdicfile, "r", encoding="utf8") as newf:
             reader = csv.DictReader(newf)
             for row in reader:
-                posdic[row["word"]] = Decimal(row["perc"])
+                posdic[row["word"]] = Decimal(row["perc"]) *amplif_num
+        min_p_posdic = Decimal(1/len(posdic))*amplif_num # minim p
         with open(negdicfile, "r", encoding="utf8") as newf:
             reader = csv.DictReader(newf)
             for row in reader:
-                negdic[row["word"]] = Decimal(row["perc"])
+                negdic[row["word"]] = Decimal(row["perc"]) *amplif_num
+        min_p_negdic = Decimal(1/len(negdic)) *amplif_num # minim p
         # loop file to classfication
         for filename in os.listdir(validationpath):
             # print(filename)
@@ -144,18 +150,18 @@ class BayerDict:
             # search each word in two dictionary
             for words in ngram_wordslist:
                 # pos P
-                # if words in posdic:
-                #     pos_word_pro *= posdic[words]
-                # else:
-                #     pos_word_pro *= missingvalue
-                # # neg P
-                # if words in negdic:
-                #     neg_word_pro *= negdic[words]
-                # else:
-                #     neg_word_pro *= missingvalue
-                if words in posdic and words in negdic:
+                if words in posdic:
                     pos_word_pro *= posdic[words]
+                else:
+                    pos_word_pro *= min_p_posdic
+                # neg P
+                if words in negdic:
                     neg_word_pro *= negdic[words]
+                else:
+                    neg_word_pro *= min_p_negdic
+                # if words in posdic and words in negdic:
+                #     pos_word_pro *= posdic[words]
+                #     neg_word_pro *= negdic[words]
             # pick up max one
             if ((pos_word_pro * self.PCpos > neg_word_pro*self.PCneg) \
                 and catgory == "pos") \
@@ -163,5 +169,6 @@ class BayerDict:
                 and catgory == "neg"):
                 right += 1
             else:
+                print(catgory,":",filename,pos_word_pro, neg_word_pro )
                 wrong += 1
         print("-------------------"+ catgory+":"+ str(right/(right+wrong)))
