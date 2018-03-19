@@ -103,6 +103,12 @@ class BayerDict:
         ngram_wordslist = self.__word_grams(temp_wordlist, 1, 3)
         return ngram_wordslist
 
+    # validationpath:  validation folder
+    # posdicfile: positive dictionary csv file
+    # negdicfile: negtive dictionary csv file
+    # catgory: "neg" or "pos" for validation folder
+    # maxfilemum: maximun number of validation
+    # missngvalue: giving value for the words which can not find in dictionary
     def validation(self,validationpath, posdicfile,negdicfile, catgory, maxfilenum, missingvalue):
         right = 0
         wrong = 0
@@ -121,7 +127,7 @@ class BayerDict:
                 negdic[row["word"]] = Decimal(row["perc"])
         # loop file to classfication
         for filename in os.listdir(validationpath):
-            print(filename)
+            # print(filename)
             if filenum >= maxfilenum:
                 break
             filenum += 1
@@ -153,4 +159,4 @@ class BayerDict:
                 right += 1
             else:
                 wrong += 1
-        print(catgory+":"+ str(right/(right+wrong)))
+        print("-------------------"+ catgory+":"+ str(right/(right+wrong)))

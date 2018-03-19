@@ -25,7 +25,7 @@ def main():
     # validation
     test_pos_inputpath = "/home/jie/Documents/aclImdb/test/pos/"
     test_neg_inputpath = "/home/jie/Documents/aclImdb/test/neg/"
-    # validation(test_pos_inputpath,test_neg_inputpath,pos_outpath,neg_outpath)
+    validation(test_pos_inputpath,test_neg_inputpath,pos_outpath,neg_outpath)
 
 # create dictionary
 def createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath):
@@ -38,22 +38,22 @@ def createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath):
 def createanlysis(pos_outpath,neg_outpath):
     slice_list = [1,2,3,4]
     params_x = partial(analysis_dic, posfile=pos_outpath, negfile=neg_outpath,
-                       analysis_perc=0.01,slice=4,gap_threhold=0.4)
+                       analysis_perc=0.01,slice=4,gap_threhold=0.1)
     result_list = Pool(4).map(params_x, slice_list)
     df_result = pd.DataFrame(data=None, columns=["word", "perc", "category", "type"])
     for i in range(4):
         if result_list[i].empty:
             continue
         else:
-            df_result.append(result_list[i], ignore_index=True)
+            df_result = df_result.append(result_list[i], ignore_index=True)
     df_result.to_csv("/home/jie/Documents/aclImdb/new.csv")
 
 def validation(test_pos_inputpath,test_neg_inputpath, pos_outpath,neg_outpath):
     aBayerdict = BayerDict()
     p_pos = Process(target=aBayerdict.validation, args=(test_pos_inputpath, \
-                                                        pos_outpath, neg_outpath, "pos", 500, 0.1))
+                                                        pos_outpath, neg_outpath, "pos", 500, 0.2))
     p_neg = Process(target=aBayerdict.validation, args=(test_neg_inputpath, \
-                                                        pos_outpath, neg_outpath, "neg", 500, 0.1))
+                                                        pos_outpath, neg_outpath, "neg", 500, 0.2))
     p_pos.start()
     p_neg.start()
 
@@ -91,18 +91,22 @@ def analysis_dic(sliceindex,posfile,negfile,analysis_perc, slice,gap_threhold):
             #     continue
             if row_num > end_pos_row:
                 break
+            mapped_item = neg_df[neg_df["word"] == item["word"]]
+
             # not find
-            elif neg_df[neg_df["word"] == item["word"]].empty:
+            if mapped_item.empty:
                 df_result.loc[row_num_result] = [item["word"], item["perc"], "P","1"]
                 row_num_result += 1
                 row_num += 1
                 print(item["word"] + " type P1")
             # gap greater than threshold
-            elif abs(neg_df[neg_df["word"] == item["word"]].iloc[0]["perc"] - item["perc"]) >= gap_threhold:
+            elif item["perc"] - mapped_item.iloc[0]["perc"] >= gap_threhold:
                 df_result.loc[row_num_result] = [item["word"],item["perc"],"P","2"]
                 row_num_result += 1
                 row_num += 1
                 print(item["word"] + " type P2")
+            # else:
+            #     print(str(mapped_item.iloc[0]["perc"]) +" / " +  str(item["perc"]))
 
     except:
         print(item)
@@ -114,20 +118,22 @@ def analysis_dic(sliceindex,posfile,negfile,analysis_perc, slice,gap_threhold):
             # if row_num < start_pos_row:
             #     row_num += 1
             #     continue
+
             if row_num > end_neg_row:
                 break
+            mapped_item = pos_df[pos_df["word"] == item["word"]]
             # not find
-            elif pos_df[pos_df["word"] == item["word"]].empty:
+            if mapped_item.empty:
                 df_result.loc[row_num_result] = [item["word"], item["perc"], "N","1"]
                 row_num_result += 1
                 row_num += 1
-                print(item["word"] + " type N1")
+                # print(item["word"] + " type N1")
             # gap greater than threshold
-            elif abs(pos_df[pos_df["word"] == item["word"]].iloc[0]["perc"] - item["perc"]) >= gap_threhold:
+            elif item["perc"] - mapped_item.iloc[0]["perc"] >= gap_threhold:
                 df_result.loc[row_num_result] = [item["word"], item["perc"], "N","2"]
                 row_num_result += 1
                 row_num += 1
-                print(item["word"] + " type N2")
+                # print(item["word"] + " type N2")
 
     except:
         print(item)
