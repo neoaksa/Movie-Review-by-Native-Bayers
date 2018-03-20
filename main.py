@@ -17,16 +17,22 @@ def main():
     neg_inputpath = "/home/jie/Documents/aclImdb/train/neg/"  # training folder for negative
     neg_outpath = "/home/jie/Documents/aclImdb/neg_output.csv"  # negative output
 
+    # this section is for error dictionary
+    # pos_inputpath = "/home/jie/Documents/aclImdb/neg_error/"  # training folder for positive
+    # pos_outpath = "/home/jie/Documents/aclImdb/pos_output_error.csv"  # positive output
+    # neg_inputpath = "/home/jie/Documents/aclImdb/neg_error/"  # training folder for negative
+    # neg_outpath = "/home/jie/Documents/aclImdb/neg_output_error.csv"  # negative output
+
     # create dictionary
     # createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath)
 
     # analysis dictionary
-    # createanlysis(pos_outpath,neg_outpath)
+    createanlysis(pos_outpath,neg_outpath)
 
     # validation
-    test_pos_inputpath = "/home/jie/Documents/aclImdb/test/pos/"
-    test_neg_inputpath = "/home/jie/Documents/aclImdb/test/neg/"
-    validation(test_pos_inputpath,test_neg_inputpath,pos_outpath,neg_outpath)
+    # test_pos_inputpath = "/home/jie/Documents/aclImdb/test/pos/"
+    # test_neg_inputpath = "/home/jie/Documents/aclImdb/test/neg/"
+    # validation(test_pos_inputpath,test_neg_inputpath,pos_outpath,neg_outpath)
 
 # create dictionary
 def createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath):
@@ -39,7 +45,7 @@ def createDic(pos_inputpath,neg_inputpath,pos_outpath,neg_outpath):
 def createanlysis(pos_outpath,neg_outpath):
     slice_list = [1,2,3,4] # four cores
     params_x = partial(analysis_dic, posfile=pos_outpath, negfile=neg_outpath,
-                       analysis_perc=0.01,slice=4,gap_threhold=0.001)
+                       analysis_perc=0.05,slice=4,gap_threhold=0.001)
     result_list = Pool(4).map(params_x, slice_list)
     df_result = pd.DataFrame(data=None, columns=["word", "perc", "category", "type"])
     for i in range(4):
@@ -52,7 +58,7 @@ def createanlysis(pos_outpath,neg_outpath):
 def validation(test_pos_inputpath,test_neg_inputpath, pos_outpath,neg_outpath):
     aBayerdict = BayerDict()
     # test list
-    testlist = [50]
+    testlist = [500]
     for i in testlist:
         print("i = ", i)
         p_pos = Process(target=aBayerdict.validation, args=(test_pos_inputpath, \
@@ -81,10 +87,11 @@ def analysis_dic(sliceindex,posfile,negfile,analysis_perc, slice,gap_threhold):
     neg_slice_size = int(max_neg_row / slice)
     start_pos_row = (sliceindex - 1) * pos_slice_size
     start_neg_row = (sliceindex - 1) * neg_slice_size
-    end_pos_row = sliceindex * pos_slice_size
-    end_neg_row = sliceindex * neg_slice_size
+    end_pos_row = sliceindex * pos_slice_size - 1
+    end_neg_row = sliceindex * neg_slice_size - 1
     pos_df_slice = pos_df.iloc[start_pos_row: end_pos_row]
     neg_df_slice = neg_df.iloc[start_neg_row: end_neg_row]
+    print(pos_df_slice.iloc[0])
     # iterative item in data frame pos
     row_num = 0
     row_num_result = 0

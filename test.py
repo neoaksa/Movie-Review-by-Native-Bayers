@@ -1,8 +1,5 @@
-from nltk.stem.wordnet import WordNetLemmatizer as wnl
-from nltk.corpus import wordnet
+from nltk.corpus import stopwords
 
-wnl = wnl()
-print(wnl.lemmatize( word="worse", pos=wordnet.ADJ))
+stop_words = set(stopwords.words('english'))  # set stop words type
 
-dic = {"a":1,"b":2,"c":3}
-print(len(dic))
+print(stop_words)

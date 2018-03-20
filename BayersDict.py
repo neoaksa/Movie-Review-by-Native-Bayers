@@ -7,8 +7,8 @@ from decimal import *
 from nltk.util import ngrams
 from nltk.stem.wordnet import WordNetLemmatizer as wnl
 from nltk.corpus import wordnet
-
-
+from nltk.corpus import stopwords
+from shutil import copyfile
 
 class BayerDict:
     # path: the folder path which contains training csv files
@@ -16,7 +16,7 @@ class BayerDict:
         self.dic = {}   # dictionary for saving words
         self.word_size = 0  # the total number of vocabulary
         self.word_type_list_In = ("NN" , "VB", "JJ", "RB")   # included words type
-        self.word_type_list_Ex = ("VBZ","VBP") # excluded words type
+        self.word_type_list_Ex = () # excluded words type
         self.word_list_Ex = ("/", "br", "<", ">","be","movie","film","have","do","none","none none") # excluded words
         self.PCpos = Decimal(0.5)  # P(Cpos)
         self.PCneg = Decimal(0.5)  # P(Cneg)
@@ -78,6 +78,7 @@ class BayerDict:
     # transfer a txt to n-gram words list
     # txtdata: a utf-8 text string
     def __ngramwords(self, txtdata):
+        stop_words = set(stopwords.words('english'))  # set stop words type
         # temp words list
         temp_wordlist = []
         # analysis words with nltk
@@ -92,6 +93,9 @@ class BayerDict:
         # filter words by vocabulary type
         for sent in tags:
             for words in sent:
+                # filter stop words
+                if words[0] in stop_words:
+                    continue
                 # print(words[0] + ":" + words[1])
                 if words[1][:2] in self.word_type_list_In and words[1] not in self.word_type_list_Ex \
                         and str(words[0]).lower() not in self.word_list_Ex:
@@ -134,6 +138,7 @@ class BayerDict:
                 negdic[row["word"]] = Decimal(row["perc"]) *amplif_num
         min_p_negdic = Decimal(1/len(negdic)) *amplif_num # minim p
         # loop file to classfication
+        error_pool = ()
         for filename in os.listdir(validationpath):
             # print(filename)
             if filenum >= maxfilenum:
@@ -169,6 +174,8 @@ class BayerDict:
                 and catgory == "neg"):
                 right += 1
             else:
-                print(catgory,":",filename,pos_word_pro, neg_word_pro )
                 wrong += 1
+                print(catgory,":",filename,pos_word_pro, neg_word_pro )
+                # please comment this if error
+                # copyfile(filepath,"/home/jie/Documents/aclImdb/"+catgory+"_error/"+filename)
         print("-------------------"+ catgory+":"+ str(right/(right+wrong)))
